@@ -1,1 +1,211 @@
-@import "tailwindcss"
+/* App specific styles */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  /* Enhanced Button Styles */
+  .btn {
+    @apply inline-flex items-center justify-center px-4 py-2.5 text-sm font-medium rounded-lg border transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  
+  .btn-primary {
+    @apply btn bg-primary-600 border-transparent text-white hover:bg-primary-700 focus:ring-primary-500 shadow-sm;
+  }
+  
+  .btn-secondary {
+    @apply btn bg-white border-gray-300 text-gray-700 hover:bg-gray-50 focus:ring-gray-500 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700;
+  }
+  
+  .btn-danger {
+    @apply btn bg-red-600 border-transparent text-white hover:bg-red-700 focus:ring-red-500;
+  }
+  
+  .btn-lg {
+    @apply px-6 py-3 text-base;
+  }
+  
+  .btn-sm {
+    @apply px-3 py-1.5 text-xs;
+  }
+
+  /* Enhanced Card Styles */
+  .card {
+    @apply bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 transition-all duration-200;
+  }
+  
+  .card-hover {
+    @apply card hover:shadow-md hover:scale-[1.02] cursor-pointer;
+  }
+  
+  .card-compact {
+    @apply card p-4;
+  }
+
+  /* Enhanced Input Styles */
+  .input {
+    @apply block w-full px-4 py-3 text-sm border border-gray-300 rounded-lg shadow-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-primary-400 dark:focus:border-primary-400 placeholder-gray-400 dark:placeholder-gray-500;
+  }
+  
+  .input-error {
+    @apply input border-red-300 focus:border-red-500 focus:ring-red-500 dark:border-red-600;
+  }
+  
+  .input-success {
+    @apply input border-green-300 focus:border-green-500 focus:ring-green-500 dark:border-green-600;
+  }
+  
+  .input-lg {
+    @apply input py-4 text-base;
+  }
+  
+  .input-sm {
+    @apply input py-2 text-xs;
+  }
+
+  /* Enhanced Form Layout */
+  .form-container {
+    @apply max-w-4xl mx-auto;
+  }
+  
+  .form-grid {
+    @apply grid grid-cols-1 md:grid-cols-2 gap-6;
+  }
+  
+  .form-field {
+    @apply space-y-1;
+  }
+  
+  .form-field-full {
+    @apply form-field md:col-span-2;
+  }
+  
+  .form-label {
+    @apply block text-sm font-medium text-gray-700 dark:text-gray-300;
+  }
+  
+  .form-label-required::after {
+    @apply text-red-500;
+    content: ' *';
+  }
+  
+  .form-error {
+    @apply text-sm text-red-600 dark:text-red-400 mt-1;
+  }
+  
+  .form-help {
+    @apply text-sm text-gray-500 dark:text-gray-400 mt-1;
+  }
+  
+  .form-actions {
+    @apply flex items-center justify-end space-x-3 pt-6 border-t border-gray-200 dark:border-gray-700;
+  }
+
+  /* Enhanced Modal/Dialog Styles */
+  .modal-overlay {
+    @apply fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50;
+  }
+  
+  .modal-content {
+    @apply bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-auto;
+  }
+  
+  .modal-header {
+    @apply px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between;
+  }
+  
+  .modal-body {
+    @apply px-6 py-6;
+  }
+  
+  .modal-footer {
+    @apply px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-end space-x-3;
+  }
+
+  /* Status Indicators */
+  .status-badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+  
+  .status-success {
+    @apply status-badge bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100;
+  }
+  
+  .status-warning {
+    @apply status-badge bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100;
+  }
+  
+  .status-error {
+    @apply status-badge bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100;
+  }
+  
+  .status-info {
+    @apply status-badge bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100;
+  }
+
+  /* Loading Spinner */
+  .spinner {
+    @apply animate-spin rounded-full border-2 border-gray-300 border-t-primary-600;
+  }
+  
+  .spinner-sm {
+    @apply spinner h-4 w-4;
+  }
+  
+  .spinner-md {
+    @apply spinner h-6 w-6;
+  }
+  
+  .spinner-lg {
+    @apply spinner h-8 w-8;
+  }
+
+  /* Responsive Text Sizing */
+  .text-responsive-lg {
+    @apply text-lg sm:text-xl md:text-2xl lg:text-3xl;
+  }
+  
+  .text-responsive-md {
+    @apply text-base sm:text-lg md:text-xl;
+  }
+  
+  .text-responsive-sm {
+    @apply text-sm sm:text-base;
+  }
+
+  /* Enhanced Animation Classes */
+  .fade-in {
+    @apply opacity-0;
+    animation: fadeIn 0.2s ease-in-out forwards;
+  }
+  
+  .slide-up {
+    @apply transform translate-y-2 opacity-0;
+    animation: slideUp 0.2s ease-in-out forwards;
+  }
+  
+  .scale-in {
+    @apply transform scale-95 opacity-0;
+    animation: scaleIn 0.2s ease-in-out forwards;
+  }
+
+  @keyframes fadeIn {
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes slideUp {
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes scaleIn {
+    to {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+}

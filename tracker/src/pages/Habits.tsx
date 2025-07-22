@@ -220,14 +220,14 @@ export default function Habits() {
           <button 
             type="button" 
             onClick={() => setIsFormVisible(false)} 
-            className="btn btn-secondary"
+            className="inline-flex items-center px-4 py-2 bg-gray-200 text-gray-700 text-sm font-medium rounded-md shadow-sm hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500 dark:focus:ring-offset-gray-800 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={isSubmitting}
           >
             Cancel
           </button>
           <button 
             type="submit" 
-            className="btn btn-primary" 
+            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={newHabit.name.trim().length < 2 || isSubmitting}
           >
             {isSubmitting ? 'Adding...' : 'Add Habit'}
@@ -284,7 +284,11 @@ export default function Habits() {
         <div className="flex justify-center">
           <button
             onClick={() => markHabitComplete(habit._id)}
-            className={`btn ${completedToday ? 'btn-secondary' : 'btn-primary'} flex items-center`}
+            className={`inline-flex items-center px-4 py-2 text-sm font-medium rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
+              completedToday 
+                ? 'bg-gray-200 text-gray-700 hover:bg-gray-300 focus:ring-gray-500 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500' 
+                : 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500'
+            }`}
             disabled={completedToday}
           >
             {completedToday ? (
@@ -331,7 +335,7 @@ export default function Habits() {
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Habits</h1>
         <button 
           onClick={() => setIsFormVisible(!isFormVisible)} 
-          className="btn btn-primary flex items-center"
+          className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900 transition-colors duration-200"
         >
           <FiPlus className="mr-2" />
           {isFormVisible ? 'Close Form' : 'Add Habit'}

@@ -13,17 +13,14 @@ import { getAuth } from 'firebase/auth';
 // 7. Register your app if you haven't already
 // 8. Copy the firebaseConfig object
 const firebaseConfig = {
-   
-        apiKey: "AIzaSyC_9TZryjw29yXhd9-7d6jVA3qbfbiZrJA",
-        authDomain: "productivity-tracker-f6149.firebaseapp.com",
-        projectId: "productivity-tracker-f6149",
-        storageBucket: "productivity-tracker-f6149.firebasestorage.app",
-        messagingSenderId: "215567624556",
-        appId: "1:215567624556:web:fd0a07d35ae022cfad6b49",
-        measurementId: "G-C2WT3LZF5E"
-    
-      
-};
+        apiKey: "AIzaSyC0EADqph6RwvG_SBMrlRct3UeAVcSSemM",
+        authDomain: "personal-productivity-tracker.firebaseapp.com",
+        projectId: "personal-productivity-tracker",
+        storageBucket: "personal-productivity-tracker.firebasestorage.app",
+        messagingSenderId: "640819888037",
+        appId: "1:640819888037:web:c7b086dad47424086e724c",
+        measurementId: "G-PFFGHFZB7B"
+      };
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
