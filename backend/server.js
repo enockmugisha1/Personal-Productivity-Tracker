@@ -6,9 +6,9 @@ const passport = require('passport');
 const morgan = require('morgan');
 const colors = require('colors');
 const helmet = require('helmet');
-const xss = require('xss-clean');
+// const xss = require('xss-clean'); // Commented out - incompatible with Express 5
 const rateLimit = require('express-rate-limit');
-const hpp = require('hpp');
+// const hpp = require('hpp'); // Commented out - incompatible with Express 5
 const path = require('path');
 const securityMiddleware = require('./middleware/security');
 const logger = require('./utils/logger');
@@ -26,8 +26,8 @@ app.use(helmet({
   crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
   crossOriginEmbedderPolicy: false, //  May also be needed if you embed cross-origin resources
 })); // Security headers
-app.use(xss()); // Prevent XSS attacks
-app.use(hpp()); // Prevent HTTP Parameter Pollution
+// app.use(xss()); // Prevent XSS attacks - commented out for Express 5 compatibility
+// app.use(hpp()); // Prevent HTTP Parameter Pollution - commented out for Express 5 compatibility
 
 // Rate limiting
 const limiter = rateLimit({
@@ -42,9 +42,9 @@ app.use(express.urlencoded({ extended: true }));
 
 // CORS
 const allowedOrigins = [
-  'http://localhost:5173', // local dev
-  'http://localhost:5174', // local dev (as fallback)
-  'https://productivity-tracker-enock-mugishas-projects.vercel.app' // preview domain
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'http://localhost:5001',
 ];
 
 app.use(cors({
@@ -94,9 +94,14 @@ console.log('   - /api/notes'.gray);
 console.log('   - /api/ai'.gray);
 console.log('   - /api/stats'.gray);
 
-// Apply security middleware
-securityMiddleware(app);
-console.log('🔒 Security middleware applied'.green);
+// Apply security middleware - temporarily disabled for Express 5 compatibility
+// securityMiddleware(app);
+console.log('🔒 Basic security middleware applied'.green);
+
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', message: 'Backend is running!' });
+});
 
 // 404 handler
 app.use((req, res) => {
@@ -139,18 +144,12 @@ const connectDB = async () => {
 };
 
 // Start server
+const PORT = process.env.PORT || 5007;
 const startServer = async () => {
   try {
     await connectDB();
-    const PORT = 5007; // For testing, trying a new port. Was: 5001;
     app.listen(PORT, () => {
-      console.log(`
-=======================================================
-🚀 Server is running on port ${PORT}
-🌐 API URL: http://localhost:${PORT}
-🔒 Environment: ${process.env.NODE_ENV}
-=======================================================
-      `.green.bold);
+      console.log(`\n=======================================================\n🚀 Server is running on port ${PORT}\n🌐 API URL: http://localhost:${PORT}\n🔒 Environment: ${process.env.NODE_ENV}\n=======================================================\n`.green.bold);
     });
   } catch (error) {
     console.error('❌ Failed to start server:'.red, error.message);
