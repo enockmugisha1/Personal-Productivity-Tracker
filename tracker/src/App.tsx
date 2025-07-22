@@ -37,37 +37,39 @@ const ProtectedLayout: React.FC = () => {
 
 const App: React.FC = () => {
   return (
-    <Router>
-      <AuthProvider>
-        <ThemeProvider>
-          <CurrencyProvider>
-            <Suspense fallback={<LoadingSpinner />}>
-              <Routes>
-                {/* Public routes */}
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
+    <div className="min-h-screen bg-gray-50">
+      <Router>
+        <AuthProvider>
+          <ThemeProvider>
+            <CurrencyProvider>
+              <Suspense fallback={<LoadingSpinner />}>
+                <Routes>
+                  {/* Public routes */}
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/register" element={<Register />} />
 
-                {/* Protected routes using the new Layout structure */}
-                <Route element={<ProtectedLayout />}>
-                  <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/goals" element={<Goals />} />
-                  <Route path="/tasks" element={<Tasks />} />
-                  <Route path="/habits" element={<Habits />} />
-                  <Route path="/notes" element={<Notes />} />
-                  <Route path="/expenses" element={<Expenses />} />
-                  <Route path="/profile" element={<Profile />} />
-                  <Route path="/settings" element={<Settings />} />
-                  <Route path="/ai-assistant" element={<AiAssistant />} />
-                </Route>
-                {/* Catch all route */}
-                <Route path="*" element={<Navigate to="/login" replace />} />
-              </Routes>
-            </Suspense>
-          </CurrencyProvider>
-        </ThemeProvider>
-      </AuthProvider>
-    </Router>
+                  {/* Protected routes using the new Layout structure */}
+                  <Route element={<ProtectedLayout />}>
+                    <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                    <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/goals" element={<Goals />} />
+                    <Route path="/tasks" element={<Tasks />} />
+                    <Route path="/habits" element={<Habits />} />
+                    <Route path="/notes" element={<Notes />} />
+                    <Route path="/expenses" element={<Expenses />} />
+                    <Route path="/profile" element={<Profile />} />
+                    <Route path="/settings" element={<Settings />} />
+                    <Route path="/ai-assistant" element={<AiAssistant />} />
+                  </Route>
+                  {/* Catch all route */}
+                  <Route path="*" element={<Navigate to="/login" replace />} />
+                </Routes>
+              </Suspense>
+            </CurrencyProvider>
+          </ThemeProvider>
+        </AuthProvider>
+      </Router>
+    </div>
   );
 };
 

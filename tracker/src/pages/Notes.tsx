@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { FiPlus, FiTrash2, FiEdit2 } from 'react-icons/fi';
+import { FiPlus, FiTrash2, FiEdit2, FiSave, FiX, FiBookmark, FiClock, FiEye, FiMaximize2, FiMinimize2 } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
 import { useDataStore } from '../store/dataStore';
 import debounce from 'lodash.debounce';
@@ -15,77 +15,343 @@ interface Note {
   updatedAt: string;
 }
 
-const NoteForm = React.memo<{
+const EnhancedNoteForm = React.memo<{
   noteInEditor: { title: string; content: string; category: string };
   editingNote: Note | null;
   isLoading: boolean;
   onInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
   onSubmit: (e: React.FormEvent) => void;
   onCancel: () => void;
-}>(({ noteInEditor, editingNote, isLoading, onInputChange, onSubmit, onCancel }) => (
-  <form onSubmit={onSubmit} className="space-y-4 bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
-    <div>
-      <label htmlFor="title" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-        Title
-      </label>
-      <input
-        type="text"
-        id="title"
-        name="title"
-        value={noteInEditor.title}
-        onChange={onInputChange}
-        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-primary-400 dark:focus:border-primary-400"
-        required
-        autoFocus
-      />
-    </div>
-    <div>
-      <label htmlFor="category" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-        Category
-      </label>
-      <input
-        type="text"
-        id="category"
-        name="category"
-        value={noteInEditor.category}
-        onChange={onInputChange}
-        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-primary-400 dark:focus:border-primary-400"
-      />
-    </div>
-    <div>
-      <label htmlFor="content" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-        Content
-      </label>
-      <textarea
-        id="content"
-        name="content"
-        value={noteInEditor.content}
-        onChange={onInputChange}
-        rows={6}
-        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-primary-400 dark:focus:border-primary-400"
-        required
-      />
-    </div>
-    <div className="flex items-center justify-end space-x-3">
-      <button 
-        type="button"
-        onClick={onCancel}
-        className="btn btn-secondary"
-      >
-        Cancel
-      </button>
-      <button 
-        type="submit" 
-        disabled={isLoading}
-        className="btn btn-primary disabled:opacity-50"
-      >
-        {isLoading ? 'Saving...' : (editingNote ? 'Save Changes' : 'Add Note')}
-      </button>
-    </div>
-  </form>
-));
+  isExpanded?: boolean;
+  onToggleExpand?: () => void;
+}>((({ noteInEditor, editingNote, isLoading, onInputChange, onSubmit, onCancel, isExpanded = false, onToggleExpand }) => {
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [isDraftSaved, setIsDraftSaved] = useState(false);
+  const [wordCount, setWordCount] = useState(0);
+  const [charCount, setCharCount] = useState(0);
+  const [showPreview, setShowPreview] = useState(false);
+  const [tags, setTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState('');
 
-NoteForm.displayName = 'NoteForm';
+  // Update word and character count
+  useEffect(() => {
+    const words = noteInEditor.content.trim().split(/\s+/).filter(word => word.length > 0);
+    setWordCount(words.length);
+    setCharCount(noteInEditor.content.length);
+  }, [noteInEditor.content]);
+
+  // Clear success message after 3 seconds
+  useEffect(() => {
+    if (successMessage) {
+      const timer = setTimeout(() => setSuccessMessage(''), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [successMessage]);
+
+  // Parse tags from category
+  useEffect(() => {
+    if (noteInEditor.category) {
+      const parsedTags = noteInEditor.category.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+      setTags(parsedTags);
+    } else {
+      setTags([]);
+    }
+  }, [noteInEditor.category]);
+
+  const validateForm = () => {
+    const newErrors: { [key: string]: string } = {};
+    
+    if (!noteInEditor.title.trim()) {
+      newErrors.title = 'Title is required';
+    } else if (noteInEditor.title.trim().length < 3) {
+      newErrors.title = 'Title must be at least 3 characters long';
+    } else if (noteInEditor.title.trim().length > 100) {
+      newErrors.title = 'Title must be less than 100 characters';
+    }
+    
+    if (!noteInEditor.content.trim()) {
+      newErrors.content = 'Content is required';
+    } else if (noteInEditor.content.trim().length < 10) {
+      newErrors.content = 'Content must be at least 10 characters long';
+    } else if (noteInEditor.content.trim().length > 10000) {
+      newErrors.content = 'Content must be less than 10,000 characters';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validateForm()) {
+      toast.error('Please fix the errors before saving.');
+      return;
+    }
+    
+    setIsSubmitting(true);
+    setErrors({});
+    
+    try {
+      await onSubmit(e);
+      setSuccessMessage(editingNote ? 'Note updated successfully!' : 'Note created successfully!');
+      setIsDraftSaved(false);
+    } catch (error) {
+      toast.error('Failed to save note. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const addTag = () => {
+    if (tagInput.trim() && !tags.includes(tagInput.trim())) {
+      const newTags = [...tags, tagInput.trim()];
+      setTags(newTags);
+      onInputChange({ target: { name: 'category', value: newTags.join(', ') } } as any);
+      setTagInput('');
+    }
+  };
+
+  const removeTag = (tagToRemove: string) => {
+    const newTags = tags.filter(tag => tag !== tagToRemove);
+    setTags(newTags);
+    onInputChange({ target: { name: 'category', value: newTags.join(', ') } } as any);
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      addTag();
+    }
+  };
+
+  const formContainerClass = isExpanded 
+    ? "fixed inset-0 z-50 overflow-auto bg-white dark:bg-gray-900 p-4" 
+    : "form-container";
+
+  return (
+    <div className={formContainerClass}>
+      <div className={`${isExpanded ? 'max-w-6xl mx-auto' : ''} bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden`}>
+        {/* Header */}
+        <div className="px-6 py-4 bg-gradient-to-r from-primary-500 to-primary-600 text-white flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <FiEdit2 className="h-6 w-6" />
+            <div>
+              <h3 className="text-xl font-semibold">
+                {editingNote ? 'Edit Note' : 'Create New Note'}
+              </h3>
+              {isDraftSaved && (
+                <p className="text-primary-100 text-sm flex items-center mt-1">
+                  <FiSave className="h-4 w-4 mr-1" />
+                  Draft auto-saved
+                </p>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center space-x-2">
+            <button
+              type="button"
+              onClick={() => setShowPreview(!showPreview)}
+              className="p-2 rounded-lg bg-primary-600 hover:bg-primary-700 transition-colors"
+              title={showPreview ? 'Hide Preview' : 'Show Preview'}
+            >
+              <FiEye className="h-5 w-5" />
+            </button>
+            {onToggleExpand && (
+              <button
+                type="button"
+                onClick={onToggleExpand}
+                className="p-2 rounded-lg bg-primary-600 hover:bg-primary-700 transition-colors"
+                title={isExpanded ? 'Minimize' : 'Expand'}
+              >
+                {isExpanded ? <FiMinimize2 className="h-5 w-5" /> : <FiMaximize2 className="h-5 w-5" />}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={onCancel}
+              className="p-2 rounded-lg bg-red-500 hover:bg-red-600 transition-colors"
+              title="Close"
+            >
+              <FiX className="h-5 w-5" />
+            </button>
+          </div>
+        </div>
+        
+        <form onSubmit={handleSubmit} className={`${isExpanded ? 'p-8' : 'p-6'} space-y-6`}>
+          {/* Success Message */}
+          {successMessage && (
+            <div className="status-success p-4 rounded-lg flex items-center space-x-2 fade-in">
+              <FiBookmark className="h-5 w-5" />
+              <p className="font-medium">{successMessage}</p>
+            </div>
+          )}
+
+          {/* Main Form Grid */}
+          <div className={isExpanded ? 'form-grid' : 'space-y-6'}>
+            {/* Title Field */}
+            <div className={isExpanded ? 'form-field' : 'form-field-full'}>
+              <label htmlFor="title" className="form-label form-label-required">
+                Title
+              </label>
+              <input
+                type="text"
+                id="title"
+                name="title"
+                value={noteInEditor.title}
+                onChange={onInputChange}
+                className={`${errors.title ? 'input-error' : 'input'} ${isExpanded ? 'input-lg' : ''}`}
+                placeholder="Enter a descriptive title for your note..."
+                aria-required="true"
+                aria-invalid={errors.title ? 'true' : 'false'}
+                aria-describedby={errors.title ? 'title-error' : 'title-help'}
+                autoFocus
+                maxLength={100}
+              />
+              {errors.title ? (
+                <p id="title-error" className="form-error">{errors.title}</p>
+              ) : (
+                <p id="title-help" className="form-help">
+                  {noteInEditor.title.length}/100 characters
+                </p>
+              )}
+            </div>
+
+            {/* Tags/Category Field */}
+            <div className={isExpanded ? 'form-field' : 'form-field-full'}>
+              <label htmlFor="tags" className="form-label">
+                Tags
+              </label>
+              <div className="space-y-2">
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {tags.map((tag, index) => (
+                    <span
+                      key={index}
+                      className="status-info flex items-center space-x-1"
+                    >
+                      <span>{tag}</span>
+                      <button
+                        type="button"
+                        onClick={() => removeTag(tag)}
+                        className="hover:text-red-600 transition-colors"
+                      >
+                        <FiX className="h-3 w-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+                <div className="flex space-x-2">
+                  <input
+                    type="text"
+                    id="tags"
+                    value={tagInput}
+                    onChange={(e) => setTagInput(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    className="input flex-1"
+                    placeholder="Add a tag and press Enter..."
+                  />
+                  <button
+                    type="button"
+                    onClick={addTag}
+                    className="btn-secondary btn-sm"
+                    disabled={!tagInput.trim()}
+                  >
+                    Add Tag
+                  </button>
+                </div>
+              </div>
+              <p className="form-help">
+                Tags help organize and find your notes quickly
+              </p>
+            </div>
+          </div>
+
+          {/* Content Area */}
+          <div className="form-field-full">
+            <div className="flex items-center justify-between mb-2">
+              <label htmlFor="content" className="form-label form-label-required">
+                Content
+              </label>
+              <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
+                <span className="flex items-center space-x-1">
+                  <FiClock className="h-4 w-4" />
+                  <span>{wordCount} words</span>
+                </span>
+                <span>{charCount}/10,000 characters</span>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 gap-4" style={{ gridTemplateColumns: showPreview ? '1fr 1fr' : '1fr' }}>
+              <div>
+                <textarea
+                  id="content"
+                  name="content"
+                  value={noteInEditor.content}
+                  onChange={onInputChange}
+                  rows={isExpanded ? 20 : 12}
+                  className={`${errors.content ? 'input-error' : 'input'} resize-none`}
+                  placeholder="Write your note content here... You can use Markdown formatting."
+                  aria-required="true"
+                  aria-invalid={errors.content ? 'true' : 'false'}
+                  aria-describedby={errors.content ? 'content-error' : 'content-help'}
+                  maxLength={10000}
+                />
+                {errors.content ? (
+                  <p id="content-error" className="form-error">{errors.content}</p>
+                ) : (
+                  <p id="content-help" className="form-help">
+                    Supports basic Markdown formatting (bold, italic, links, etc.)
+                  </p>
+                )}
+              </div>
+              
+              {showPreview && (
+                <div className="border border-gray-300 dark:border-gray-600 rounded-lg p-4 bg-gray-50 dark:bg-gray-700">
+                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Preview</h4>
+                  <div className="prose dark:prose-invert max-w-none text-sm">
+                    {noteInEditor.content ? (
+                      <pre className="whitespace-pre-wrap font-sans text-gray-900 dark:text-white">{noteInEditor.content}</pre>
+                    ) : (
+                      <p className="text-gray-500 dark:text-gray-400 italic">Start writing to see preview...</p>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Form Actions */}
+          <div className="form-actions">
+            <div className="flex items-center space-x-4">
+              <button 
+                type="button"
+                onClick={onCancel}
+                className="btn-secondary"
+                disabled={isSubmitting}
+              >
+                <FiX className="h-4 w-4 mr-2" />
+                Cancel
+              </button>
+              <button 
+                type="submit" 
+                disabled={isSubmitting || !noteInEditor.title.trim() || !noteInEditor.content.trim()}
+                className="btn-primary btn-lg"
+              >
+                {isSubmitting && <div className="spinner-sm mr-2" />}
+                <FiSave className="h-4 w-4 mr-2" />
+                {isSubmitting ? 'Saving...' : (editingNote ? 'Save Changes' : 'Create Note')}
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}));
+
+EnhancedNoteForm.displayName = 'EnhancedNoteForm';
 
 const NoteCard = React.memo<{ 
   note: Note;
@@ -125,6 +391,7 @@ export default function Notes() {
   const [noteInEditor, setNoteInEditor] = useState({ title: '', content: '', category: '' });
   const [isLoading, setIsLoading] = useState(false);
   const [isFormVisible, setIsFormVisible] = useState(false);
+  const [isFormExpanded, setIsFormExpanded] = useState(false);
   const [editingNote, setEditingNote] = useState<Note | null>(null);
   const { user } = useAuth();
   const fetchStats = useDataStore((state) => state.fetchStats);
@@ -285,13 +552,15 @@ export default function Notes() {
       </div>
 
       {isFormVisible && (
-        <NoteForm
+        <EnhancedNoteForm
           noteInEditor={noteInEditor}
           editingNote={editingNote}
           isLoading={isLoading}
           onInputChange={handleInputChange}
           onSubmit={handleSubmit}
           onCancel={toggleFormVisibility}
+          isExpanded={isFormExpanded}
+          onToggleExpand={() => setIsFormExpanded(!isFormExpanded)}
         />
       )}
 
