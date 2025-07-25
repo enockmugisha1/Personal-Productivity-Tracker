@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
 import { auth as firebaseAuth } from '../config/firebase'; // Import Firebase auth
 import { GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut as firebaseSignOut, updateProfile } from 'firebase/auth'; // Import Firebase auth methods
+import { API_CONFIG } from '../config/api';
 
 interface User {
   id: string;
@@ -31,7 +32,8 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Configure axios defaults
-axios.defaults.baseURL = 'http://localhost:5007'; // Backend URL
+axios.defaults.baseURL = API_CONFIG.baseURL;
+axios.defaults.timeout = API_CONFIG.timeout;
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
