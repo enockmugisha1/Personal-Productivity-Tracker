@@ -12,7 +12,11 @@ const userSchema = new mongoose.Schema({
   password: {
     type: String,
     minlength: 6,
-    select: false // Don't return password in queries
+    select: false, // Don't return password in queries
+    required: function() {
+      // Password is required only if not a Google user
+      return !this.isGoogleUser;
+    }
   },
   displayName: {
     type: String,
@@ -22,6 +26,10 @@ const userSchema = new mongoose.Schema({
   photoURL: String,
   googleId: String,
   firebaseUid: String,
+  isGoogleUser: {
+    type: Boolean,
+    default: false
+  },
   role: {
     type: String,
     enum: ['user', 'admin'],

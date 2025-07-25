@@ -97,27 +97,42 @@ router.post('/login', async (req, res) => {
 // Verify Firebase token and create/update user in our database
 router.post('/verify-token', async (req, res) => {
   try {
-    const { token, firebaseUid } = req.body;
+    const { token, firebaseUid, email, displayName, photoURL } = req.body;
+    
+    console.log('Verifying token for user:', { firebaseUid, email, displayName });
     
     // Verify the Firebase token
     const decodedToken = await admin.auth().verifyIdToken(token);
+    console.log('Token verified successfully for UID:', decodedToken.uid);
     
-    // Check if user exists in our database
-    let user = await User.findOne({ firebaseUid: firebaseUid });
+    // Check if user exists in our database by firebaseUid or email
+    let user = await User.findOne({ 
+      $or: [
+        { firebaseUid: firebaseUid },
+        { email: email }
+      ]
+    });
     
     if (!user) {
       // Create new user if they don't exist
+      console.log('Creating new user for:', email);
       user = new User({
         firebaseUid: decodedToken.uid,
-        email: decodedToken.email,
-        displayName: decodedToken.name || decodedToken.email.split('@')[0],
-        photoURL: decodedToken.picture || null
+        email: decodedToken.email || email,
+        displayName: decodedToken.name || displayName || email.split('@')[0],
+        photoURL: decodedToken.picture || photoURL || null,
+        isGoogleUser: true
       });
       await user.save();
+      console.log('New user created:', user._id);
     } else {
-      // Optionally: Update existing user fields if they differ from Firebase
-      // For example, if displayName or photoURL might change in Firebase
+      // Update existing user with Firebase UID if not set
       let updated = false;
+      if (!user.firebaseUid) {
+        user.firebaseUid = decodedToken.uid;
+        user.isGoogleUser = true;
+        updated = true;
+      }
       if (decodedToken.name && user.displayName !== decodedToken.name) {
         user.displayName = decodedToken.name;
         updated = true;
@@ -128,11 +143,18 @@ router.post('/verify-token', async (req, res) => {
       }
       if (updated) {
         await user.save();
+        console.log('User updated:', user._id);
       }
     }
 
+    // Update last login
+    user.lastLogin = new Date();
+    await user.save();
+
     // Generate backend JWT token
     const authToken = generateToken(user);
+
+    console.log('Authentication successful for user:', user.email);
 
     res.json({ 
       token: authToken,
@@ -140,12 +162,24 @@ router.post('/verify-token', async (req, res) => {
         id: user._id,
         email: user.email,
         displayName: user.displayName,
-        photoURL: user.photoURL
+        photoURL: user.photoURL,
+        settings: user.settings
       }
     });
   } catch (error) {
     console.error('Token verification error:', error);
-    res.status(401).json({ message: 'Invalid token' });
+    
+    // Provide more detailed error information
+    if (error.code === 'auth/id-token-expired') {
+      return res.status(401).json({ message: 'Token expired, please sign in again' });
+    } else if (error.code === 'auth/argument-error') {
+      return res.status(400).json({ message: 'Invalid token format' });
+    }
+    
+    res.status(401).json({ 
+      message: 'Authentication failed', 
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Invalid token'
+    });
   }
 });
 
