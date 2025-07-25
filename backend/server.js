@@ -44,6 +44,7 @@ app.use(express.urlencoded({ extended: true }));
 const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:5174',
+  'http://localhost:5175',
   'http://localhost:5001',
 ];
 
@@ -84,6 +85,7 @@ app.use('/api/habits', require('./routes/habits'));
 app.use('/api/notes', require('./routes/notes'));
 app.use('/api/ai', require('./routes/ai'));
 app.use('/api/stats', require('./routes/stats'));
+app.use('/api/notifications', require('./routes/notifications'));
 
 console.log('🛣️  Routes registered:'.cyan);
 console.log('   - /api/auth'.gray);
@@ -93,6 +95,7 @@ console.log('   - /api/habits'.gray);
 console.log('   - /api/notes'.gray);
 console.log('   - /api/ai'.gray);
 console.log('   - /api/stats'.gray);
+console.log('   - /api/notifications'.gray);
 
 // Apply security middleware - temporarily disabled for Express 5 compatibility
 // securityMiddleware(app);

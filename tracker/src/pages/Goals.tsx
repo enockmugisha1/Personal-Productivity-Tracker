@@ -3,7 +3,7 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import { useDataStore } from '../store/dataStore';
-import { FiPlus, FiTarget, FiCalendar, FiTrash2, FiMapPin, FiSave, FiX, FiEdit2, FiTrendingUp, FiFlag, FiMaximize2, FiMinimize2 } from 'react-icons/fi';
+import { FiPlus, FiTarget, FiCalendar, FiTrash2, FiMapPin, FiSave, FiX, FiEdit2, FiTrendingUp, FiFlag, FiMaximize2, FiMinimize2, FiBook, FiActivity, FiAward, FiBell, FiClock, FiBarChart3, FiTrendingDown } from 'react-icons/fi';
 import debounce from 'lodash.debounce';
 
 interface Location {
