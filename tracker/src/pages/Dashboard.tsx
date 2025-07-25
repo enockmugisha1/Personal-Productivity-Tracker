@@ -6,9 +6,19 @@ import {
   FlagIcon,
   ChartBarIcon,
   DocumentTextIcon,
+  BellIcon,
+  ClockIcon,
+  TrophyIcon,
+  FireIcon,
+  CalendarDaysIcon,
+  SparklesIcon,
+  EyeIcon,
+  PlusIcon,
+  ArrowTrendingUpIcon,
 } from '@heroicons/react/24/outline';
 import axios from 'axios';
 
+// Enhanced Stat Card with better visuals
 const StatCard = React.memo<{
   name: string;
   value: string | number;
@@ -16,24 +26,52 @@ const StatCard = React.memo<{
   icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
   color: string;
   bgColor: string;
-}>(({ name, value, description, icon: Icon, color, bgColor }) => (
-  <div className="relative bg-white pt-5 px-4 pb-12 sm:pt-6 sm:px-6 shadow rounded-lg overflow-hidden">
-    <dt>
-      <div className={`absolute rounded-md p-3 ${bgColor}`}>
-        <Icon className={`h-6 w-6 ${color}`} aria-hidden="true" />
+  trend?: number;
+}>(({ name, value, description, icon: Icon, color, bgColor, trend }) => (
+  <div className="relative bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 transition-all duration-200 hover:shadow-xl hover:scale-105">
+    <div className="flex items-center justify-between">
+      <div className="flex items-center space-x-4">
+        <div className={`rounded-xl p-3 ${bgColor}`}>
+          <Icon className={`h-7 w-7 ${color}`} aria-hidden="true" />
+        </div>
+        <div>
+          <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{name}</p>
+          <p className="text-3xl font-bold text-gray-900 dark:text-white mt-1">{value}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{description}</p>
+        </div>
       </div>
-      <p className="ml-16 text-sm font-medium text-gray-500 truncate">
-        {name}
-      </p>
-    </dt>
-    <dd className="ml-16 pb-6 flex items-baseline sm:pb-7">
-      <p className="text-2xl font-semibold text-gray-900">{value}</p>
-      <p className="ml-2 flex items-baseline text-sm text-gray-500">
-        {description}
-      </p>
-    </dd>
+      {trend !== undefined && (
+        <div className={`flex items-center space-x-1 text-sm ${
+          trend > 0 ? 'text-green-600' : trend < 0 ? 'text-red-600' : 'text-gray-500'
+        }`}>
+          <ArrowTrendingUpIcon className={`h-4 w-4 ${
+            trend < 0 ? 'transform rotate-180' : ''
+          }`} />
+          <span>{Math.abs(trend)}%</span>
+        </div>
+      )}
+    </div>
   </div>
 ));
+
+// New Notification Component
+const NotificationBadge = React.memo<{ count: number; type: 'info' | 'warning' | 'success' }>(
+  ({ count, type }) => {
+    if (count === 0) return null;
+    
+    const colorClasses = {
+      info: 'bg-blue-100 text-blue-800 border-blue-200',
+      warning: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+      success: 'bg-green-100 text-green-800 border-green-200'
+    };
+    
+    return (
+      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${colorClasses[type]}`}>
+        {count}
+      </span>
+    );
+  }
+);
 
 StatCard.displayName = 'StatCard';
 
@@ -72,6 +110,14 @@ export default function Dashboard() {
   const [taskSort, setTaskSort] = useState('due');
   const [goalSearch, setGoalSearch] = useState('');
   const [goalSort, setGoalSort] = useState('progress');
+  
+  // Notification states
+  const [notifications, setNotifications] = useState<{
+    overdueTasks: number;
+    dueSoonTasks: number;
+    goalDeadlines: number;
+    habitReminders: number;
+  }>({ overdueTasks: 0, dueSoonTasks: 0, goalDeadlines: 0, habitReminders: 0 });
 
   useEffect(() => {
     if (user) {
@@ -186,97 +232,251 @@ export default function Dashboard() {
         ))}
       </div>
 
-      {/* Quick Views Section */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Recent Notes */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-          <div className="flex justify-between items-center mb-2">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Recent Notes</h2>
-            <select value={noteSort} onChange={e => setNoteSort(e.target.value)} className="input dark:bg-gray-700 dark:text-white">
-              <option value="date">Sort by Date</option>
-              <option value="title">Sort by Title</option>
-            </select>
+      {/* Notifications Panel */}
+      <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl shadow-lg text-white p-6 mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-3">
+            <BellIcon className="h-6 w-6" />
+            <h2 className="text-xl font-semibold">Notifications & Reminders</h2>
           </div>
-          <input
-            type="text"
-            placeholder="Search notes..."
-            value={noteSearch}
-            onChange={e => setNoteSearch(e.target.value)}
-            className="input w-full mb-2 dark:bg-gray-700 dark:text-white"
-          />
-          <ul className="space-y-2">
-            {filteredNotes.length === 0 ? (
-              <li className="text-gray-500 dark:text-gray-400">No notes found.</li>
-            ) : (
-              filteredNotes.map(note => (
-                <li key={note._id} className="border-b dark:border-gray-700 pb-2">
-                  <div className="font-medium text-gray-900 dark:text-white">{note.title}</div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400">{new Date(note.updatedAt).toLocaleString()}</div>
-                  <div className="text-sm text-gray-700 dark:text-gray-300 truncate">{note.content}</div>
-                </li>
-              ))
-            )}
-          </ul>
+          <div className="flex space-x-2">
+            <NotificationBadge count={notifications.overdueTasks} type="warning" />
+            <NotificationBadge count={notifications.dueSoonTasks} type="info" />
+            <NotificationBadge count={notifications.goalDeadlines} type="success" />
+          </div>
         </div>
-        {/* Upcoming Tasks */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-          <div className="flex justify-between items-center mb-2">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Upcoming Tasks</h2>
-            <select value={taskSort} onChange={e => setTaskSort(e.target.value)} className="input dark:bg-gray-700 dark:text-white">
-              <option value="due">Sort by Due Date</option>
-              <option value="title">Sort by Title</option>
-            </select>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+          <div className="flex items-center space-x-2">
+            <ClockIcon className="h-5 w-5 text-red-200" />
+            <span>{notifications.overdueTasks} Overdue Tasks</span>
           </div>
-          <input
-            type="text"
-            placeholder="Search tasks..."
-            value={taskSearch}
-            onChange={e => setTaskSearch(e.target.value)}
-            className="input w-full mb-2 dark:bg-gray-700 dark:text-white"
-          />
-          <ul className="space-y-2">
-            {filteredTasks.length === 0 ? (
-              <li className="text-gray-500 dark:text-gray-400">No tasks found.</li>
-            ) : (
-              filteredTasks.map(task => (
-                <li key={task._id} className="border-b dark:border-gray-700 pb-2">
-                  <div className="font-medium text-gray-900 dark:text-white">{task.title}</div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400">{task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'No due date'}</div>
-                  <div className="text-sm text-gray-700 dark:text-gray-300 truncate">{task.description}</div>
-                </li>
-              ))
-            )}
-          </ul>
+          <div className="flex items-center space-x-2">
+            <CalendarDaysIcon className="h-5 w-5 text-yellow-200" />
+            <span>{notifications.dueSoonTasks} Due Soon</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <FlagIcon className="h-5 w-5 text-green-200" />
+            <span>{notifications.goalDeadlines} Goal Deadlines</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <FireIcon className="h-5 w-5 text-orange-200" />
+            <span>{notifications.habitReminders} Habit Reminders</span>
+          </div>
         </div>
-        {/* Active Goals */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-          <div className="flex justify-between items-center mb-2">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Active Goals</h2>
-            <select value={goalSort} onChange={e => setGoalSort(e.target.value)} className="input dark:bg-gray-700 dark:text-white">
-              <option value="progress">Sort by Progress</option>
-              <option value="title">Sort by Title</option>
-            </select>
+      </div>
+
+      {/* Enhanced Quick Views Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Enhanced Recent Notes Widget */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+          <div className="bg-gradient-to-r from-yellow-400 to-orange-500 p-4">
+            <div className="flex items-center justify-between text-white">
+              <div className="flex items-center space-x-2">
+                <DocumentTextIcon className="h-6 w-6" />
+                <h3 className="text-lg font-semibold">Recent Notes</h3>
+              </div>
+              <div className="flex items-center space-x-2">
+                <select 
+                  value={noteSort} 
+                  onChange={e => setNoteSort(e.target.value)} 
+                  className="bg-white/20 border-0 rounded text-sm text-white backdrop-blur-sm"
+                >
+                  <option value="date" className="text-gray-900">By Date</option>
+                  <option value="title" className="text-gray-900">By Title</option>
+                </select>
+                <PlusIcon className="h-5 w-5 cursor-pointer hover:bg-white/20 rounded p-1" />
+              </div>
+            </div>
           </div>
-          <input
-            type="text"
-            placeholder="Search goals..."
-            value={goalSearch}
-            onChange={e => setGoalSearch(e.target.value)}
-            className="input w-full mb-2 dark:bg-gray-700 dark:text-white"
-          />
-          <ul className="space-y-2">
-            {filteredGoals.length === 0 ? (
-              <li className="text-gray-500 dark:text-gray-400">No goals found.</li>
-            ) : (
-              filteredGoals.map(goal => (
-                <li key={goal._id} className="border-b dark:border-gray-700 pb-2">
-                  <div className="font-medium text-gray-900 dark:text-white">{goal.title}</div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400">Progress: {goal.progress || 0}%</div>
-                  <div className="text-sm text-gray-700 dark:text-gray-300 truncate">{goal.description}</div>
-                </li>
-              ))
-            )}
-          </ul>
+          <div className="p-4">
+            <input
+              type="text"
+              placeholder="Search notes..."
+              value={noteSearch}
+              onChange={e => setNoteSearch(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-500 dark:bg-gray-700 dark:text-white mb-4"
+            />
+            <div className="space-y-3 max-h-64 overflow-y-auto">
+              {filteredNotes.length === 0 ? (
+                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                  <DocumentTextIcon className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                  <p>No notes found</p>
+                </div>
+              ) : (
+                filteredNotes.map(note => (
+                  <div key={note._id} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors cursor-pointer">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-gray-900 dark:text-white text-sm">{note.title}</h4>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          {new Date(note.updatedAt).toLocaleDateString()}
+                        </p>
+                        <p className="text-sm text-gray-600 dark:text-gray-300 mt-2 line-clamp-2">{note.content}</p>
+                      </div>
+                      <EyeIcon className="h-4 w-4 text-gray-400 ml-2 flex-shrink-0" />
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Enhanced Upcoming Tasks Widget */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+          <div className="bg-gradient-to-r from-blue-500 to-indigo-600 p-4">
+            <div className="flex items-center justify-between text-white">
+              <div className="flex items-center space-x-2">
+                <CheckCircleIcon className="h-6 w-6" />
+                <h3 className="text-lg font-semibold">Upcoming Tasks</h3>
+              </div>
+              <div className="flex items-center space-x-2">
+                <select 
+                  value={taskSort} 
+                  onChange={e => setTaskSort(e.target.value)} 
+                  className="bg-white/20 border-0 rounded text-sm text-white backdrop-blur-sm"
+                >
+                  <option value="due" className="text-gray-900">By Due Date</option>
+                  <option value="title" className="text-gray-900">By Title</option>
+                </select>
+                <PlusIcon className="h-5 w-5 cursor-pointer hover:bg-white/20 rounded p-1" />
+              </div>
+            </div>
+          </div>
+          <div className="p-4">
+            <input
+              type="text"
+              placeholder="Search tasks..."
+              value={taskSearch}
+              onChange={e => setTaskSearch(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white mb-4"
+            />
+            <div className="space-y-3 max-h-64 overflow-y-auto">
+              {filteredTasks.length === 0 ? (
+                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                  <CheckCircleIcon className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                  <p>No tasks found</p>
+                </div>
+              ) : (
+                filteredTasks.map(task => {
+                  const daysUntilDue = task.dueDate ? Math.ceil((new Date(task.dueDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) : null;
+                  const isOverdue = daysUntilDue !== null && daysUntilDue < 0;
+                  const isDueSoon = daysUntilDue !== null && daysUntilDue <= 3 && daysUntilDue >= 0;
+                  
+                  return (
+                    <div key={task._id} className={`rounded-lg p-3 transition-colors cursor-pointer ${
+                      isOverdue ? 'bg-red-50 dark:bg-red-900/20' : 
+                      isDueSoon ? 'bg-yellow-50 dark:bg-yellow-900/20' : 
+                      'bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600'
+                    }`}>
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-gray-900 dark:text-white text-sm">{task.title}</h4>
+                          <div className="flex items-center space-x-2 mt-1">
+                            <ClockIcon className={`h-4 w-4 ${
+                              isOverdue ? 'text-red-500' : isDueSoon ? 'text-yellow-500' : 'text-gray-400'
+                            }`} />
+                            <span className={`text-xs ${
+                              isOverdue ? 'text-red-600 font-medium' : 
+                              isDueSoon ? 'text-yellow-600 font-medium' : 
+                              'text-gray-500 dark:text-gray-400'
+                            }`}>
+                              {task.dueDate ? (
+                                isOverdue ? `${Math.abs(daysUntilDue)} days overdue` :
+                                isDueSoon ? `Due in ${daysUntilDue} days` :
+                                new Date(task.dueDate).toLocaleDateString()
+                              ) : 'No due date'}
+                            </span>
+                          </div>
+                          {task.description && (
+                            <p className="text-sm text-gray-600 dark:text-gray-300 mt-2 line-clamp-2">{task.description}</p>
+                          )}
+                        </div>
+                        <div className="flex items-center space-x-1 ml-2">
+                          {isOverdue && <span className="w-2 h-2 bg-red-500 rounded-full" />}
+                          {isDueSoon && <span className="w-2 h-2 bg-yellow-500 rounded-full" />}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Enhanced Active Goals Widget */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+          <div className="bg-gradient-to-r from-green-500 to-teal-600 p-4">
+            <div className="flex items-center justify-between text-white">
+              <div className="flex items-center space-x-2">
+                <TrophyIcon className="h-6 w-6" />
+                <h3 className="text-lg font-semibold">Active Goals</h3>
+              </div>
+              <div className="flex items-center space-x-2">
+                <select 
+                  value={goalSort} 
+                  onChange={e => setGoalSort(e.target.value)} 
+                  className="bg-white/20 border-0 rounded text-sm text-white backdrop-blur-sm"
+                >
+                  <option value="progress" className="text-gray-900">By Progress</option>
+                  <option value="title" className="text-gray-900">By Title</option>
+                </select>
+                <PlusIcon className="h-5 w-5 cursor-pointer hover:bg-white/20 rounded p-1" />
+              </div>
+            </div>
+          </div>
+          <div className="p-4">
+            <input
+              type="text"
+              placeholder="Search goals..."
+              value={goalSearch}
+              onChange={e => setGoalSearch(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-white mb-4"
+            />
+            <div className="space-y-3 max-h-64 overflow-y-auto">
+              {filteredGoals.length === 0 ? (
+                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                  <TrophyIcon className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                  <p>No goals found</p>
+                </div>
+              ) : (
+                filteredGoals.map(goal => {
+                  const progress = goal.progress || 0;
+                  const progressColor = progress >= 75 ? 'bg-green-500' : progress >= 50 ? 'bg-yellow-500' : progress >= 25 ? 'bg-orange-500' : 'bg-red-500';
+                  
+                  return (
+                    <div key={goal._id} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors cursor-pointer">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-gray-900 dark:text-white text-sm">{goal.title}</h4>
+                          <div className="mt-2">
+                            <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400 mb-1">
+                              <span>Progress</span>
+                              <span className="font-medium">{progress}%</span>
+                            </div>
+                            <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2">
+                              <div 
+                                className={`h-2 rounded-full transition-all duration-300 ${progressColor}`}
+                                style={{ width: `${progress}%` }}
+                              />
+                            </div>
+                          </div>
+                          {goal.description && (
+                            <p className="text-sm text-gray-600 dark:text-gray-300 mt-2 line-clamp-2">{goal.description}</p>
+                          )}
+                        </div>
+                        <div className="flex items-center space-x-1 ml-2">
+                          {progress >= 75 && <SparklesIcon className="h-4 w-4 text-green-500" />}
+                          {progress >= 50 && progress < 75 && <TrophyIcon className="h-4 w-4 text-yellow-500" />}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>

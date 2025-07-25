@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
@@ -43,9 +43,13 @@ export default function Tasks() {
     fetchTasks();
   }, [user]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setNewTask({ ...newTask, [e.target.name]: e.target.value });
-  };
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setNewTask(prevTask => ({
+      ...prevTask,
+      [name]: value
+    }));
+  }, []);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
