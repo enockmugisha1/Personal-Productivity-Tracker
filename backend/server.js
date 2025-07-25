@@ -46,11 +46,14 @@ const allowedOrigins = [
   'http://localhost:5174',
   'http://localhost:5175',
   'http://localhost:5001',
+  // Production Vercel URLs
   'https://productivity-tracker-lh89.vercel.app',
-  // Add your Vercel domain here after deployment
-  process.env.CLIENT_URL,
-  /\.vercel\.app$/
-];
+  'https://productivity-tracker-lh89-git-main-enock-mugishas-projects.vercel.app',
+  'https://productivity-tracker-lh89-jk3rrxjp8-enock-mugishas-projects.vercel.app',
+  // Add all Vercel preview URLs
+  'https://productivity-tracker-lh89-git-main-enock-mugishas-projects.vercel.app',
+  process.env.CLIENT_URL
+].filter(Boolean); // Remove any undefined values
 
 app.use(cors({
   origin: function (origin, callback) {
