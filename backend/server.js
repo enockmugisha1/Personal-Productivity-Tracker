@@ -46,6 +46,7 @@ const allowedOrigins = [
   'http://localhost:5174',
   'http://localhost:5175',
   'http://localhost:5001',
+  'https://productivity-tracker-lh89.vercel.app',
   // Add your Vercel domain here after deployment
   process.env.CLIENT_URL,
   /\.vercel\.app$/
