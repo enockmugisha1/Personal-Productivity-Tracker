@@ -4,7 +4,11 @@
   "main": "eslint.config.js",
   "scripts": {
     "dev": "vite",
+    "dev:local": "VITE_API_URL=http://localhost:5007 vite",
+    "dev:render": "VITE_API_URL=https://personal-productivity-tracker.onrender.com vite",
     "build": "vite build",
+    "build:local": "VITE_API_URL=http://localhost:5007 vite build",
+    "build:production": "VITE_API_URL=https://personal-productivity-tracker.onrender.com vite build",
     "preview": "vite preview",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
