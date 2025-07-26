@@ -9,6 +9,8 @@
     "build": "vite build",
     "build:local": "VITE_API_URL=http://localhost:5007 vite build",
     "build:production": "VITE_API_URL=https://personal-productivity-tracker.onrender.com vite build",
+    "build:firebase": "vite build",
+    "deploy:firebase": "npm run build:firebase && firebase deploy",
     "preview": "vite preview",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

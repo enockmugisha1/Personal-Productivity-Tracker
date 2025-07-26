@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import { useDataStore } from '../store/dataStore';
@@ -22,7 +21,7 @@ export default function Tasks() {
     dueDate: '',
   });
   const [isFormVisible, setIsFormVisible] = useState(false);
-  const { user } = useAuth();
+  const { user, apiClient } = useAuth();
   const fetchStats = useDataStore((state) => state.fetchStats);
 
   const fetchTasks = async () => {
@@ -31,7 +30,7 @@ export default function Tasks() {
       return;
     }
     try {
-      const response = await axios.get('/api/tasks');
+      const response = await apiClient.get('/api/tasks');
       setTasks(response.data);
     } catch (error) {
       toast.error('Failed to fetch tasks');
@@ -58,12 +57,12 @@ export default function Tasks() {
       return;
     }
     try {
-      await axios.post('/api/tasks', newTask);
+      await apiClient.post('/api/tasks', newTask);
       setNewTask({ title: '', description: '', dueDate: '' });
       setIsFormVisible(false);
       toast.success('Task created successfully');
       fetchTasks();
-      fetchStats();
+      fetchStats(apiClient);
     } catch (error) {
       toast.error('Failed to create task');
     }
@@ -72,11 +71,11 @@ export default function Tasks() {
   const toggleTaskStatus = async (taskId: string, currentCompleted: boolean) => {
     if (!user) return;
     try {
-      await axios.patch(`/api/tasks/${taskId}`, {
+      await apiClient.patch(`/api/tasks/${taskId}`, {
         completed: !currentCompleted,
       });
       fetchTasks();
-      fetchStats();
+      fetchStats(apiClient);
       toast.success('Task status updated');
     } catch (error) {
       toast.error('Failed to update task');
@@ -87,9 +86,9 @@ export default function Tasks() {
     if (!user) return;
     if (window.confirm('Are you sure you want to delete this task?')) {
         try {
-          await axios.delete(`/api/tasks/${taskId}`);
+          await apiClient.delete(`/api/tasks/${taskId}`);
           fetchTasks();
-          fetchStats();
+          fetchStats(apiClient);
           toast.success('Task deleted');
         } catch (error) {
           toast.error('Failed to delete task');
@@ -121,7 +120,7 @@ export default function Tasks() {
       setIsSubmitting(true);
       
       try {
-        const response = await axios.post('/api/tasks', {
+        const response = await apiClient.post('/api/tasks', {
           ...newTask,
           title: trimmedTitle
         });
@@ -133,7 +132,7 @@ export default function Tasks() {
         
         // Refresh tasks list and stats
         await fetchTasks();
-        fetchStats();
+        fetchStats(apiClient);
         
         toast.success('Task created successfully');
         

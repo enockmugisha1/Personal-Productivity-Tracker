@@ -1,6 +1,4 @@
 import { create } from 'zustand';
-import axios from 'axios';
-import { auth as firebaseAuth } from '../config/firebase';
 
 interface Stats {
   totalTasks: number;
@@ -14,7 +12,7 @@ interface DataState {
   stats: Stats;
   loading: boolean;
   error: string | null;
-  fetchStats: () => Promise<void>;
+  fetchStats: (apiClient: any) => Promise<void>;
 }
 
 const initialStats: Stats = {
@@ -29,24 +27,11 @@ export const useDataStore = create<DataState>((set) => ({
   stats: initialStats,
   loading: false,
   error: null,
-  fetchStats: async () => {
+  fetchStats: async (apiClient) => {
     try {
-      // Check if user is authenticated
-      if (!firebaseAuth.currentUser) {
-        set({ error: 'User not authenticated', loading: false });
-        return;
-      }
-
       set({ loading: true, error: null });
       
-      // Get fresh token (Firebase will handle token refresh automatically)
-      const token = await firebaseAuth.currentUser.getIdToken(true);
-      
-      const response = await axios.get('/api/stats', {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
+      const response = await apiClient.get('/api/stats');
       
       set({ stats: response.data, loading: false });
     } catch (error: any) {

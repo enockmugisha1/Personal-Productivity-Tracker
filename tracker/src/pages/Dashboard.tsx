@@ -16,7 +16,6 @@ import {
   PlusIcon,
   ArrowTrendingUpIcon,
 } from '@heroicons/react/24/outline';
-import axios from 'axios';
 
 // Enhanced Stat Card with better visuals
 const StatCard = React.memo<{
@@ -96,7 +95,7 @@ interface GoalQuick {
 }
 
 export default function Dashboard() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, apiClient } = useAuth();
   const { stats, loading: statsLoading, fetchStats } = useDataStore();
 
   // State for quick views
@@ -121,13 +120,36 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (user) {
-      fetchStats();
+      fetchStats(apiClient);
       // Fetch recent notes, tasks, goals
-      axios.get('/api/notes').then(res => setNotes(res.data || []));
-      axios.get('/api/tasks').then(res => setTasks(res.data || []));
-      axios.get('/api/goals').then(res => setGoals(res.data || []));
+      apiClient.get('/api/notes').then((res: any) => setNotes(res.data || []));
+      apiClient.get('/api/tasks').then((res: any) => setTasks(res.data || []));
+      apiClient.get('/api/goals').then((res: any) => setGoals(res.data || []));
     }
-  }, [user, fetchStats]);
+  }, [user, fetchStats, apiClient]);
+
+  // Refresh dashboard data when stats change (indicating new items were added/deleted)
+  useEffect(() => {
+    if (user && !statsLoading) {
+      // Refresh dashboard data when stats are updated
+      const refreshData = async () => {
+        try {
+          const [notesRes, tasksRes, goalsRes] = await Promise.all([
+            apiClient.get('/api/notes'),
+            apiClient.get('/api/tasks'),
+            apiClient.get('/api/goals')
+          ]);
+          setNotes(notesRes.data || []);
+          setTasks(tasksRes.data || []);
+          setGoals(goalsRes.data || []);
+        } catch (error) {
+          console.error('Failed to refresh dashboard data:', error);
+        }
+      };
+      
+      refreshData();
+    }
+  }, [user, stats, apiClient, statsLoading]);
 
   // Filter and sort helpers
   const filteredNotes = useMemo(() => {

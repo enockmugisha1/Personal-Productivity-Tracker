@@ -47,6 +47,7 @@ const allowedOrigins = [
   'http://localhost:5175',
   'http://localhost:5001',
   'http://localhost:3000',
+  'http://localhost:3002',
   'http://127.0.0.1:5173',
   'http://127.0.0.1:5174',
   // Production Vercel URLs
@@ -65,13 +66,21 @@ app.use(cors({
     // allow requests with no origin (like mobile apps, curl, etc.)
     if (!origin) return callback(null, true);
     
+    // Allow all localhost origins for development
+    if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+      console.log('✅ CORS allowed localhost origin:', origin);
+      return callback(null, true);
+    }
+    
     // Check if origin is in allowed origins list
     if (allowedOrigins.includes(origin)) {
+      console.log('✅ CORS allowed origin:', origin);
       return callback(null, true);
     }
     
     // Allow all Vercel preview URLs for your project
     if (origin && origin.includes('productivity-tracker-lh89') && origin.includes('vercel.app')) {
+      console.log('✅ CORS allowed Vercel origin:', origin);
       return callback(null, true);
     }
     

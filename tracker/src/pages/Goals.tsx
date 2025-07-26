@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import axios from 'axios';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import { useDataStore } from '../store/dataStore';
@@ -30,13 +29,13 @@ export default function Goals() {
   const [isFormExpanded, setIsFormExpanded] = useState(false);
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const { user } = useAuth();
+  const { user, apiClient } = useAuth();
   const fetchStats = useDataStore((state) => state.fetchStats);
 
   const fetchGoals = async () => {
     if (!user) { setGoals([]); return; }
     try {
-      const response = await axios.get('/api/goals');
+      const response = await apiClient.get('/api/goals');
       setGoals(response.data);
     } catch (error) {
       toast.error('Failed to fetch goals');
@@ -69,21 +68,21 @@ export default function Goals() {
         progress: editingGoal ? editingGoal.progress : 0,
         status: editingGoal ? editingGoal.status : 'not_started'
       };
-      await axios[method](url, goalData);
+      await apiClient[method](url, goalData);
       toast.success(editingGoal ? 'Goal updated successfully' : 'Goal created successfully');
       
       setGoalInEditor({ title: '', description: '', dueDate: '' });
       setEditingGoal(null);
       setIsFormVisible(false);
       fetchGoals();
-      fetchStats();
+      fetchStats(apiClient);
     } catch (error) {
       toast.error(editingGoal ? 'Failed to update goal' : 'Failed to create goal');
       console.error("Submit goal error:", error);
     } finally {
       setIsLoading(false);
     }
-  }, [editingGoal, goalInEditor, user, fetchGoals, fetchStats]);
+  }, [editingGoal, goalInEditor, user, apiClient, fetchGoals, fetchStats]);
 
   const handleEdit = useCallback((goal: Goal) => {
     setEditingGoal(goal);
@@ -104,9 +103,9 @@ export default function Goals() {
   const updateGoal = async (goalId: string, data: Partial<Goal>) => {
     if (!user) return;
     try {
-      await axios.patch(`/api/goals/${goalId}`, data);
+      await apiClient.patch(`/api/goals/${goalId}`, data);
       fetchGoals();
-      fetchStats();
+      fetchStats(apiClient);
       toast.success('Goal updated');
     } catch (error) {
       toast.error('Failed to update goal');
@@ -117,9 +116,9 @@ export default function Goals() {
     if (!user) return;
     if (window.confirm('Are you sure you want to delete this goal?')) {
         try {
-          await axios.delete(`/api/goals/${goalId}`);
+          await apiClient.delete(`/api/goals/${goalId}`);
           fetchGoals();
-          fetchStats();
+          fetchStats(apiClient);
           toast.success('Goal deleted');
         } catch (error) {
           toast.error('Failed to delete goal');

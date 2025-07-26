@@ -7,7 +7,7 @@ import { Toaster } from 'react-hot-toast';
 import axios from 'axios';
 
 // Set the default base URL for all Axios requests
-axios.defaults.baseURL = 'https://personal-productivity-tracker.onrender.com';
+axios.defaults.baseURL = 'http://localhost:5007';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

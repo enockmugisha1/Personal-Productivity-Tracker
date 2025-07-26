@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { useAuth } from './AuthContext';
 
 type Theme = 'light' | 'dark' | 'system';
 
@@ -12,19 +11,20 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, updateUserSettings } = useAuth();
-  const [theme, setThemeState] = useState<Theme>('light');
+  const [theme, setThemeState] = useState<Theme>(() => {
+    // Initialize from localStorage first
+    const storedTheme = localStorage.getItem('theme') as Theme;
+    return storedTheme || 'light';
+  });
   const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light');
 
-  // Initialize theme from localStorage or user settings
+  // Initialize theme from localStorage
   useEffect(() => {
     const storedTheme = localStorage.getItem('theme') as Theme;
-    if (user?.settings?.theme) {
-      setThemeState(user.settings.theme);
-    } else if (storedTheme) {
+    if (storedTheme) {
       setThemeState(storedTheme);
     }
-  }, [user]);
+  }, []);
 
   // Handle system theme changes
   useEffect(() => {
@@ -55,14 +55,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const setTheme = useCallback(async (newTheme: Theme) => {
     setThemeState(newTheme);
-    if (user && updateUserSettings && user.settings) {
-      await updateUserSettings({ 
-        theme: newTheme === 'system' ? 'light' : newTheme, 
-        emailNotifications: user.settings.emailNotifications || false,
-        pushNotifications: user.settings.pushNotifications || false
-      });
-    }
-  }, [user, updateUserSettings]);
+    localStorage.setItem('theme', newTheme);
+  }, []);
 
   const toggleTheme = useCallback(async () => {
     const newTheme = theme === 'light' ? 'dark' : theme === 'dark' ? 'system' : 'light';

@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import axios from 'axios';
 import toast from 'react-hot-toast';
 import { FiPlus, FiTrash2, FiEdit2, FiSave, FiX, FiBookmark, FiClock, FiEye, FiMaximize2, FiMinimize2 } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
@@ -393,7 +392,7 @@ export default function Notes() {
   const [isFormVisible, setIsFormVisible] = useState(false);
   const [isFormExpanded, setIsFormExpanded] = useState(false);
   const [editingNote, setEditingNote] = useState<Note | null>(null);
-  const { user } = useAuth();
+  const { user, apiClient } = useAuth();
   const fetchStats = useDataStore((state) => state.fetchStats);
 
   const getDraftKey = useCallback(() => {
@@ -438,7 +437,7 @@ export default function Notes() {
       return;
     }
     try {
-      const response = await axios.get('/api/notes');
+      const response = await apiClient.get('/api/notes');
       setNotes(response.data);
     } catch (error) {
       toast.error('Failed to fetch notes');
@@ -447,7 +446,7 @@ export default function Notes() {
     } finally {
       setIsLoading(false);
     }
-  }, [user]);
+  }, [user, apiClient]);
 
   useEffect(() => {
     fetchNotes();
@@ -469,7 +468,7 @@ export default function Notes() {
     const method = editingNote ? 'put' : 'post';
 
     try {
-      await axios[method](url, noteInEditor);
+      await apiClient[method](url, noteInEditor);
       toast.success(editingNote ? 'Note updated successfully' : 'Note created successfully');
       
       const draftKey = getDraftKey();
@@ -479,27 +478,24 @@ export default function Notes() {
       setEditingNote(null);
       setIsFormVisible(false);
       fetchNotes();
-      fetchStats();
+      fetchStats(apiClient);
     } catch (error) {
       toast.error(editingNote ? 'Failed to update note' : 'Failed to create note');
       console.error("Submit note error:", error);
     } finally {
       setIsLoading(false);
     }
-  }, [editingNote, noteInEditor, user, getDraftKey, fetchNotes, fetchStats]);
+  }, [editingNote, noteInEditor, user, apiClient, getDraftKey, fetchNotes, fetchStats]);
 
   const handleDelete = useCallback(async (noteId: string) => {
-    if (!user) {
-      toast.error('You must be logged in to delete a note.');
-      return;
-    }
-    if (window.confirm('Are you sure you want to delete this note?')) {
+    if (!user) return;
+    if (window.confirm('Are you sure you want to delete this note? This cannot be undone.')) {
       setIsLoading(true);
       try {
-        await axios.delete(`/api/notes/${noteId}`);
+        await apiClient.delete(`/api/notes/${noteId}`);
         toast.success('Note deleted successfully');
         fetchNotes();
-        fetchStats();
+        fetchStats(apiClient);
       } catch (error) {
         toast.error('Failed to delete note');
         console.error("Delete note error:", error);
@@ -507,7 +503,7 @@ export default function Notes() {
         setIsLoading(false);
       }
     }
-  }, [user, fetchNotes, fetchStats]);
+  }, [user, apiClient, fetchNotes, fetchStats]);
 
   const handleEdit = useCallback((note: Note) => {
     setEditingNote(note);

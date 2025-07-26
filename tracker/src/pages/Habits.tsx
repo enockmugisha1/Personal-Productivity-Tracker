@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import axios from 'axios';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import { useDataStore } from '../store/dataStore';
@@ -25,7 +24,7 @@ export default function Habits() {
   });
   const [isFormVisible, setIsFormVisible] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { user } = useAuth();
+  const { user, apiClient } = useAuth();
   const fetchStats = useDataStore((state) => state.fetchStats);
 
   const fetchHabits = async () => {
@@ -35,7 +34,7 @@ export default function Habits() {
     }
     try {
       setLoading(true);
-      const response = await axios.get('/api/habits');
+      const response = await apiClient.get('/api/habits');
       setHabits(response.data);
     } catch (error) {
       toast.error('Failed to fetch habits');
@@ -64,12 +63,12 @@ export default function Habits() {
       return; 
     }
     try {
-      await axios.post('/api/habits', newHabit);
+      await apiClient.post('/api/habits', newHabit);
       setNewHabit({ name: '', description: '', frequency: 'daily' });
       setIsFormVisible(false);
       toast.success('Habit created successfully');
       fetchHabits();
-      fetchStats();
+      fetchStats(apiClient);
     } catch (error) {
       toast.error('Failed to create habit');
     }
@@ -78,9 +77,9 @@ export default function Habits() {
   const markHabitComplete = async (habitId: string) => {
     if (!user) return;
     try {
-      await axios.post(`/api/habits/${habitId}/complete`);
+      await apiClient.post(`/api/habits/${habitId}/complete`);
       fetchHabits();
-      fetchStats();
+      fetchStats(apiClient);
       toast.success('Habit marked as complete!');
     } catch (error) {
       toast.error('Failed to complete habit');
@@ -91,9 +90,9 @@ export default function Habits() {
     if (!user) return;
     if (window.confirm('Are you sure you want to delete this habit? This cannot be undone.')) {
       try {
-        await axios.delete(`/api/habits/${habitId}`);
+        await apiClient.delete(`/api/habits/${habitId}`);
         fetchHabits();
-        fetchStats();
+        fetchStats(apiClient);
         toast.success('Habit deleted');
       } catch (error) {
         toast.error('Failed to delete habit');

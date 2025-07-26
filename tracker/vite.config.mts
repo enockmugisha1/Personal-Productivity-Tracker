@@ -7,6 +7,6 @@ export default defineConfig({
     postcss: './postcss.config.js',
   },
   server: {
-    port: 5174, // Using 5174 to avoid conflict with the backend
+    port: 3000, // Using standard React dev port
   },
 });

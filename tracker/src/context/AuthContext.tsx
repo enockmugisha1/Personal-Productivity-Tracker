@@ -27,23 +27,67 @@ interface AuthContextType {
   googleLogin: () => Promise<void>;
   updateUserSettings: (settings: User['settings']) => Promise<void>;
   updateProfilePicture: (file: File) => Promise<void>;
+  apiClient: typeof apiClient;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Configure axios defaults
-axios.defaults.baseURL = API_CONFIG.baseURL;
-axios.defaults.timeout = API_CONFIG.timeout;
+// Create axios instance with proper configuration
+const apiClient = axios.create({
+  baseURL: API_CONFIG.baseURL,
+  timeout: API_CONFIG.timeout,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [authToken, setAuthToken] = useState<string | null>(null);
+  const [authToken, setAuthToken] = useState<string | null>(() => {
+    // Initialize from localStorage if available
+    return localStorage.getItem('authToken');
+  });
 
-  // Set up axios interceptor for token
+  // Persist authToken to localStorage whenever it changes
   useEffect(() => {
-    const interceptor = axios.interceptors.request.use(
+    if (authToken) {
+      localStorage.setItem('authToken', authToken);
+    } else {
+      localStorage.removeItem('authToken');
+    }
+  }, [authToken]);
+
+  // Initialize authentication state on mount
+  useEffect(() => {
+    const initializeAuth = async () => {
+      try {
+        // Check if we have a stored token
+        const storedToken = localStorage.getItem('authToken');
+        if (storedToken) {
+          // Validate the token with the backend
+          const response = await apiClient.get('/api/auth/me');
+          setUser(response.data.user);
+          setAuthToken(storedToken);
+        }
+      } catch (error) {
+        // If token validation fails, clear it
+        console.log('Token validation failed, clearing stored token');
+        localStorage.removeItem('authToken');
+        setAuthToken(null);
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initializeAuth();
+  }, []);
+
+  // Set up apiClient interceptor for token
+  useEffect(() => {
+    const interceptor = apiClient.interceptors.request.use(
       async (config) => {
         // Use stored auth token if available (for backend JWT)
         if (authToken) {
@@ -65,7 +109,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
 
     // Add response interceptor to handle 401 errors
-    const responseInterceptor = axios.interceptors.response.use(
+    const responseInterceptor = apiClient.interceptors.response.use(
       (response) => response,
       (error) => {
         if (error.response?.status === 401) {
@@ -79,16 +123,45 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
 
     return () => {
-      axios.interceptors.request.eject(interceptor);
-      axios.interceptors.response.eject(responseInterceptor);
+      apiClient.interceptors.request.eject(interceptor);
+      apiClient.interceptors.response.eject(responseInterceptor);
     };
   }, [authToken]);
 
   const verifyUser = async (firebaseUser: any) => {
     try {
+      console.log('🔐 Getting Firebase ID token for user:', firebaseUser.email);
       const token = await firebaseUser.getIdToken(true);
       
-      const response = await axios.post('/api/auth/verify-token', {
+      // Check if token is from the correct Firebase project
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const tokenProjectId = payload.aud;
+        const expectedProjectId = 'productivity-tracker-f6149';
+        
+        if (tokenProjectId !== expectedProjectId) {
+          console.warn(`🚨 Token project mismatch! Expected: ${expectedProjectId}, Got: ${tokenProjectId}`);
+          console.log('🧹 Signing out user to clear old project tokens...');
+          
+          // Sign out the user to clear the old tokens
+          await firebaseSignOut(firebaseAuth);
+          setUser(null);
+          setAuthToken(null);
+          setError('Authentication expired. Please sign in again.');
+          return;
+        }
+      } catch (tokenParseError) {
+        console.error('Error parsing token:', tokenParseError);
+      }
+      
+      console.log('📤 Sending verification request to backend:', {
+        firebaseUid: firebaseUser.uid,
+        email: firebaseUser.email,
+        displayName: firebaseUser.displayName,
+        photoURL: firebaseUser.photoURL
+      });
+      
+      const response = await apiClient.post('/api/auth/verify-token', {
         token,
         firebaseUid: firebaseUser.uid,
         email: firebaseUser.email,
@@ -96,13 +169,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         photoURL: firebaseUser.photoURL
       });
 
+      console.log('✅ Backend verification successful:', response.data.user);
+      
       // Store the backend JWT token for future requests
       setAuthToken(response.data.token);
       setUser(response.data.user);
       setError(null);
     } catch (err: any) {
-      console.error("Error verifying user profile:", err);
-      setError(err.response?.data?.message || 'Failed to verify profile');
+      console.error("❌ Error verifying user profile:", {
+        message: err.message,
+        status: err.response?.status,
+        statusText: err.response?.statusText,
+        data: err.response?.data,
+        config: {
+          url: err.config?.url,
+          method: err.config?.method,
+          baseURL: err.config?.baseURL
+        }
+      });
+      setError(err.response?.data?.message || err.message || 'Failed to verify profile');
       setUser(null);
       setAuthToken(null);
     }
@@ -155,7 +240,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setError(null);
       setLoading(true);
-      const response = await axios.post('/api/auth/login', {
+      const response = await apiClient.post('/api/auth/login', {
         email,
         password
       });
@@ -175,7 +260,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setError(null);
       setLoading(true);
-      const response = await axios.post('/api/auth/register', {
+      const response = await apiClient.post('/api/auth/register', {
         email,
         password,
         displayName
@@ -215,7 +300,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const formData = new FormData();
       formData.append('photo', file);
 
-      const response = await axios.post('/api/auth/upload-photo', formData, {
+      const response = await apiClient.post('/api/auth/upload-photo', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
@@ -238,7 +323,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const updateUserSettings = async (settings: User['settings']) => {
     try {
-      const response = await axios.patch('/api/auth/settings', { settings });
+      const response = await apiClient.patch('/api/auth/settings', { settings });
       setUser(response.data.user);
     } catch (error: any) {
       setError(error.response?.data?.message || 'Failed to update settings');
@@ -255,7 +340,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     logout,
     googleLogin,
     updateUserSettings,
-    updateProfilePicture
+    updateProfilePicture,
+    apiClient
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

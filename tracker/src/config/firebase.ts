@@ -1,28 +1,38 @@
 
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
+import { clearFirebaseAuthData } from '../utils/clearFirebaseData';
 
-// TODO: Replace these with your actual Firebase config values
-// To get these values:
-// 1. Go to Firebase Console (https://console.firebase.google.com/)
-// 2. Select your project
-// 3. Click the gear icon next to "Project Overview"
-// 4. Click "Project settings"
-// 5. Scroll down to "Your apps" section
-// 6. Click the web icon (</>)
-// 7. Register your app if you haven't already
-// 8. Copy the firebaseConfig object
+// Firebase configuration - matching the personal-productivity-tracker project
+// Based on the configuration shown in Firebase Console
 const firebaseConfig = {
-        apiKey: "AIzaSyC0EADqph6RwvG_SBMrlRct3UeAVcSSemM",
-        authDomain: "personal-productivity-tracker.firebaseapp.com",
-        projectId: "personal-productivity-tracker",
-        storageBucket: "personal-productivity-tracker.firebasestorage.app",
-        messagingSenderId: "640819888037",
-        appId: "1:640819888037:web:c7b086dad47424086e724c",
-        measurementId: "G-PFFGHFZB7B"
-      };
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyC0EADqph6RwvG_SBMrlRct3UeAVcSSemM",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "personal-productivity-tracker.firebaseapp.com",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "personal-productivity-tracker",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "personal-productivity-tracker.firebasestorage.app",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "640819888037",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:640819888037:web:cc700860d47424086e724c",
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-PFFGHFZB7B"
+};
+
+// Debug: Log the Firebase configuration being used
+console.log('🔥 Firebase Config:', {
+  projectId: firebaseConfig.projectId,
+  authDomain: firebaseConfig.authDomain,
+  apiKey: firebaseConfig.apiKey.substring(0, 10) + '...'
+});
+
+// Clear any old authentication data from previous project configurations
+const expectedProjectId = 'personal-productivity-tracker';
+if (firebaseConfig.projectId === expectedProjectId) {
+  // Use utility function to clear old Firebase data
+  const cleared = clearFirebaseAuthData();
+  if (cleared.localStorageCleared > 0 || cleared.sessionStorageCleared > 0) {
+    console.log('🧹 Cleared old Firebase authentication data for project migration');
+  }
+}
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-export default app; 
+export default app;

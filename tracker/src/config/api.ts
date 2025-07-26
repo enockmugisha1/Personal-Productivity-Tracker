@@ -16,7 +16,10 @@ const getApiUrl = () => {
 
 export const API_CONFIG = {
   baseURL: getApiUrl(),
-  timeout: 10000,
+  timeout: 30000, // Increased to 30 seconds
+  headers: {
+    'Content-Type': 'application/json',
+  },
 };
 
 // Log the API URL for debugging

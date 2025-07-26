@@ -101,6 +101,14 @@ router.post('/verify-token', async (req, res) => {
     
     console.log('Verifying token for user:', { firebaseUid, email, displayName });
     
+    // Validate required fields
+    if (!token) {
+      return res.status(400).json({ message: 'Token is required' });
+    }
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required' });
+    }
+    
     // Verify the Firebase token
     const decodedToken = await admin.auth().verifyIdToken(token);
     console.log('Token verified successfully for UID:', decodedToken.uid);
@@ -116,15 +124,31 @@ router.post('/verify-token', async (req, res) => {
     if (!user) {
       // Create new user if they don't exist
       console.log('Creating new user for:', email);
-      user = new User({
+      const userData = {
         firebaseUid: decodedToken.uid,
         email: decodedToken.email || email,
         displayName: decodedToken.name || displayName || email.split('@')[0],
         photoURL: decodedToken.picture || photoURL || null,
         isGoogleUser: true
-      });
-      await user.save();
-      console.log('New user created:', user._id);
+      };
+      
+      console.log('User data to create:', userData);
+      user = new User(userData);
+      
+      try {
+        await user.save();
+        console.log('New user created:', user._id);
+      } catch (saveError) {
+        console.error('User save error:', saveError);
+        if (saveError.name === 'ValidationError') {
+          const validationErrors = Object.values(saveError.errors).map(err => err.message);
+          return res.status(400).json({ 
+            message: 'Validation failed', 
+            errors: validationErrors 
+          });
+        }
+        throw saveError;
+      }
     } else {
       // Update existing user with Firebase UID if not set
       let updated = false;
