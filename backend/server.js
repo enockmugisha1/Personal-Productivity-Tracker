@@ -46,12 +46,17 @@ const allowedOrigins = [
   'http://localhost:5174',
   'http://localhost:5175',
   'http://localhost:5001',
+  'http://localhost:3000',
+  'http://127.0.0.1:5173',
+  'http://127.0.0.1:5174',
   // Production Vercel URLs
   'https://productivity-tracker-lh89.vercel.app',
   'https://productivity-tracker-lh89-git-main-enock-mugishas-projects.vercel.app',
+  'https://productivity-tracker-lh89-alwmbjeom-enock-mugishas-projects.vercel.app',
   'https://productivity-tracker-lh89-jk3rrxjp8-enock-mugishas-projects.vercel.app',
-  // Add all Vercel preview URLs
-  'https://productivity-tracker-lh89-git-main-enock-mugishas-projects.vercel.app',
+  // Render URL (for internal health checks)
+  'https://personal-productivity-tracker.onrender.com',
+  // Environment variable
   process.env.CLIENT_URL
 ].filter(Boolean); // Remove any undefined values
 
@@ -59,13 +64,23 @@ app.use(cors({
   origin: function (origin, callback) {
     // allow requests with no origin (like mobile apps, curl, etc.)
     if (!origin) return callback(null, true);
+    
+    // Check if origin is in allowed origins list
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);
-    } else {
-      return callback(new Error('Not allowed by CORS'));
     }
+    
+    // Allow all Vercel preview URLs for your project
+    if (origin && origin.includes('productivity-tracker-lh89') && origin.includes('vercel.app')) {
+      return callback(null, true);
+    }
+    
+    console.log('🚫 CORS rejected origin:', origin);
+    return callback(new Error('Not allowed by CORS'));
   },
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token']
 }));
 console.log(`🌐 CORS enabled for origins: ${allowedOrigins.join(', ')}`.green);
 
@@ -155,6 +170,21 @@ const connectDB = async () => {
 
 // Start server
 const PORT = process.env.PORT || 5007;
+
+// Validate required environment variables in production
+if (process.env.NODE_ENV === 'production') {
+  const requiredEnvVars = ['MONGO_URI', 'JWT_SECRET'];
+  const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
+  
+  if (missingEnvVars.length > 0) {
+    console.error('❌ Missing required environment variables:'.red.bold);
+    missingEnvVars.forEach(envVar => {
+      console.error(`   - ${envVar}`.red);
+    });
+    console.error('Please set these variables in your deployment platform.'.red);
+    process.exit(1);
+  }
+}
 const startServer = async () => {
   try {
     await connectDB();

@@ -2,15 +2,28 @@ services:
   - type: web
     name: productivity-tracker-backend
     env: node
-    buildCommand: cd backend && npm install
-    startCommand: cd backend && npm start
+    region: oregon
     plan: free
+    rootDir: backend
+    buildCommand: npm ci
+    startCommand: npm start
     healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
-        fromService:
-          type: web
-          name: productivity-tracker-backend
-          property: port
+        value: 10000
+      # Add your MongoDB connection string in Render dashboard
+      - key: MONGO_URI
+        sync: false  # Set this manually in Render dashboard
+      # Add your JWT secret in Render dashboard  
+      - key: JWT_SECRET
+        sync: false  # Set this manually in Render dashboard
+      # Optional: Email configuration for notifications
+      - key: EMAIL_USER
+        sync: false  # Set this manually in Render dashboard
+      - key: EMAIL_PASS
+        sync: false  # Set this manually in Render dashboard
+      # Frontend URL - update this with your actual frontend URL
+      - key: CLIENT_URL
+        value: https://productivity-tracker-lh89.vercel.app

@@ -13,7 +13,8 @@
   "license": "ISC",
   "description": "Personal Productivity Tracker Backend API",
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",
@@ -30,6 +31,7 @@
     "mongoose": "^8.16.3",
     "morgan": "^1.10.0",
     "multer": "^2.0.1",
+    "node-cron": "^4.2.1",
     "nodemailer": "^7.0.5",
     "ollama": "^0.5.16",
     "passport": "^0.7.0",
