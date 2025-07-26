@@ -14,10 +14,5 @@
         { "key": "X-XSS-Protection", "value": "1; mode=block" }
       ]
     }
-  ],
-  "functions": {
-    "tracker/src/**/*.{js,ts,jsx,tsx}": {
-      "maxDuration": 30
-    }
-  }
+  ]
 }
