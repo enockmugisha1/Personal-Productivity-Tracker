@@ -194,4 +194,18 @@ MIT License - see LICENSE file for details.
 
 ---
 
-**Made with ❤️ by Enock Mugishah**
+## 👥 Contributors
+
+This project was made possible by the contributions of the following team members:
+
+| Name                | Contribution Area                              |
+|---------------------|-----------------------------------------------|
+| Enock Mugisha       | Project setup, full-stack integration, authentication, AI assistant logic |
+| Kadi Matou Koita    | Habit tracking, streak logic, database schema  |
+| Gloire Gwiza        | UX/UI design, communication lead              |
+| INYANGE Larissa     | Notes system, markdown support                |
+| Ganza Owen          | External APIs and library integrations        |
+| Betelhem Chelebo    | Project management, communication coordination |
+
+
+
