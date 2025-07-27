@@ -282,12 +282,6 @@ router.post('/upload-photo', auth, upload.single('photo'), processUpload, async 
   }
 });
 
-// Serve uploaded files with caching headers
-router.use('/uploads', (req, res, next) => {
-  // Set cache control headers for images
-  res.setHeader('Cache-Control', 'public, max-age=31536000'); // Cache for 1 year
-  res.setHeader('Expires', new Date(Date.now() + 31536000000).toUTCString());
-  next();
-}, express.static(path.join(__dirname, '../uploads')));
+// Note: Static file serving is handled in server.js
 
 module.exports = router;

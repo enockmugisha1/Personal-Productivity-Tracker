@@ -11,7 +11,8 @@ const getApiUrl = () => {
   }
   
   // In production, use environment variable or default to Render URL
-  return import.meta.env.VITE_API_URL || 'https://personal-productivity-tracker.onrender.com';
+  const productionUrl = import.meta.env.VITE_API_URL || 'https://personal-productivity-tracker.onrender.com';
+  return productionUrl;
 };
 
 export const API_CONFIG = {

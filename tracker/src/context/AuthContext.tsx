@@ -137,7 +137,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         const payload = JSON.parse(atob(token.split('.')[1]));
         const tokenProjectId = payload.aud;
-        const expectedProjectId = 'productivity-tracker-f6149';
+        const expectedProjectId = 'productive-30143';
         
         if (tokenProjectId !== expectedProjectId) {
           console.warn(`🚨 Token project mismatch! Expected: ${expectedProjectId}, Got: ${tokenProjectId}`);

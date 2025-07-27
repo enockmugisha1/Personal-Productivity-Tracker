@@ -13,6 +13,7 @@ export const clearFirebaseAuthData = () => {
       key.includes('firebase') ||
       key.includes('personal-productivity-tracker') ||
       key.includes('productivity-tracker') ||
+      key.includes('productive-30143') ||
       key.startsWith('CookieConsentPolicy') ||
       key.startsWith('firebase:') ||
       key.includes('authUser')
@@ -34,7 +35,8 @@ export const clearFirebaseAuthData = () => {
     if (key && (
       key.includes('firebase') ||
       key.includes('personal-productivity-tracker') ||
-      key.includes('productivity-tracker')
+      key.includes('productivity-tracker') ||
+      key.includes('productive-30143')
     )) {
       sessionKeysToRemove.push(key);
     }

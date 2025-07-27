@@ -6,9 +6,9 @@ const passport = require('passport');
 const morgan = require('morgan');
 const colors = require('colors');
 const helmet = require('helmet');
-// const xss = require('xss-clean'); // Commented out - incompatible with Express 5
+const xss = require('xss-clean');
 const rateLimit = require('express-rate-limit');
-// const hpp = require('hpp'); // Commented out - incompatible with Express 5
+const hpp = require('hpp');
 const path = require('path');
 const securityMiddleware = require('./middleware/security');
 const logger = require('./utils/logger');
@@ -26,8 +26,8 @@ app.use(helmet({
   crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
   crossOriginEmbedderPolicy: false, //  May also be needed if you embed cross-origin resources
 })); // Security headers
-// app.use(xss()); // Prevent XSS attacks - commented out for Express 5 compatibility
-// app.use(hpp()); // Prevent HTTP Parameter Pollution - commented out for Express 5 compatibility
+app.use(xss()); // Prevent XSS attacks
+app.use(hpp()); // Prevent HTTP Parameter Pollution
 
 // Rate limiting
 const limiter = rateLimit({
@@ -84,14 +84,25 @@ app.use(cors({
       return callback(null, true);
     }
     
+    // Allow any Vercel.app domain for your project (more permissive for production)
+    if (origin && origin.includes('vercel.app')) {
+      console.log('✅ CORS allowed Vercel.app origin:', origin);
+      return callback(null, true);
+    }
+    
     console.log('🚫 CORS rejected origin:', origin);
     return callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token']
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token', 'Origin', 'Accept', 'X-Requested-With'],
+  preflightContinue: false,
+  optionsSuccessStatus: 204
 }));
 console.log(`🌐 CORS enabled for origins: ${allowedOrigins.join(', ')}`.green);
+
+// Handle OPTIONS preflight requests for all API routes
+app.options('*', cors());
 
 // Serve static files from uploads directory
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
